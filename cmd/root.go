@@ -1,11 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -15,9 +11,6 @@ const (
 )
 
 var (
-	// Used for flags.
-	cfgFile     string
-
 	rootCmd = &cobra.Command{
 		Use:   "umigrate",
 		Short: "Micro migrate",
@@ -28,26 +21,4 @@ var (
 // Execute executes the root command.
 func Execute() error {
 	return rootCmd.Execute()
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file path")
-}
-
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		fmt.Println("Config file path is required")
-		os.Exit(1)
-	}
-
-	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
 }

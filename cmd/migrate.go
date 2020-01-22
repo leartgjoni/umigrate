@@ -8,20 +8,24 @@ import (
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 )
 
 func init() {
+	migrateCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file path")
+
 	rootCmd.AddCommand(migrateCmd)
 }
 
-var migrateCmd = &cobra.Command{
+var (
+	cfgFile     string
+	migrateCmd = &cobra.Command{
 	Use:   "migrate",
 	Short: "migrate file or all",
 	Long:  `Migrate stuff`,
+	PersistentPreRun: initConfig,
 	Run: func(cmd *cobra.Command, args []string) {
-		//fmt.Println("NEW CMD", viper.Get("DB_NAME"), args[0])
-
 		dbHost := viper.GetString("DB_HOST")
 		dbPort := viper.GetString("DB_PORT")
 		dbUser := viper.GetString("DB_USER")
@@ -45,6 +49,23 @@ var migrateCmd = &cobra.Command{
 			runAllMigrations(db)
 		}
 	},
+}
+)
+
+func initConfig(cmd *cobra.Command, args []string) {
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		fmt.Println("Config file path is required")
+		os.Exit(1)
+	}
+
+	viper.AutomaticEnv()
+
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
 }
 
 // runAllMigrations loops through all migrations in the current folder and runs all the migrations that have not been run before
