@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -32,9 +31,8 @@ var newCmd = &cobra.Command{
 		// write migration
 		upFilename := fmt.Sprintf("%s.sql", baseFilename)
 		if err := ioutil.WriteFile(upFilename, content, 0644); err != nil {
-			fmt.Printf(ErrorColor, fmt.Sprintf("%s\n", err))
-			os.Exit(1)
+			LogErr("%s\n", err)
 		}
-		fmt.Printf(SuccessColor, fmt.Sprintf("MIGRATION FILE CREATED: %s\n", baseFilename))
+		LogSuccess("MIGRATION FILE CREATED: %s\n", baseFilename)
 	},
 }
