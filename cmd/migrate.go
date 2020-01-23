@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -33,13 +32,15 @@ var (
 		dbPassword := viper.GetString("DB_PASSWORD")
 
 		if dbHost == "" || dbPort == "" || dbUser == "" || dbName == "" || dbPassword == "" {
-			log.Fatal("DB_HOST, DB_PORT, DB_USER, DB_NAME, DB_PASSWORD are required configs")
+			fmt.Printf(ErrorColor, fmt.Sprintf("DB_HOST, DB_PORT, DB_USER, DB_NAME, DB_PASSWORD are required configs\n"))
+			os.Exit(1)
 		}
 
 		dbUrl := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", dbHost,  dbPort, dbUser, dbName, dbPassword)
 		db, err := sql.Open("postgres", dbUrl)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf(ErrorColor, fmt.Sprintf("%s\n", err))
+			os.Exit(1)
 		}
 		defer db.Close()
 
@@ -57,14 +58,14 @@ func initConfig(cmd *cobra.Command, args []string) {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		fmt.Println("Config file path is required")
+		fmt.Printf(ErrorColor, fmt.Sprintf("config file path is required\n"))
 		os.Exit(1)
 	}
 
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		fmt.Printf(InfoColor, fmt.Sprintf("using config file: %s", viper.ConfigFileUsed()))
 	}
 }
 
@@ -77,7 +78,8 @@ func runAllMigrations(db *sql.DB) {
 	filenamePattern := fmt.Sprintf("./*.sql")
 	files, err := filepath.Glob(filenamePattern)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf(ErrorColor, fmt.Sprintf("%s\n", err))
+		os.Exit(1)
 	}
 
 	for _, filePath := range files {
@@ -90,12 +92,13 @@ func runAllMigrations(db *sql.DB) {
 
 		sqlQuery, fileErr := ioutil.ReadFile(fmt.Sprintf("./%s", filename))
 		if fileErr != nil {
-			log.Fatal(fileErr)
+			fmt.Printf(ErrorColor, fmt.Sprintf("%s\n", fileErr))
+			os.Exit(1)
 		}
 
 		execQuery(db, string(sqlQuery))
 		execQuery(db, "INSERT INTO _migrations (migration) VALUES($1)", filename)
-		fmt.Printf(NoticeColor, fmt.Sprintf("%s MIGRATED\n", filename))
+		fmt.Printf(SuccessColor, fmt.Sprintf("%s MIGRATED\n", filename))
 	}
 
 }
@@ -108,7 +111,8 @@ func runNamedMigration(migrationName string, db *sql.DB) {
 
 	sqlQuery, fileErr := ioutil.ReadFile(fmt.Sprintf("./%s", migrationName))
 	if fileErr != nil {
-		log.Fatal(fileErr)
+		fmt.Printf(ErrorColor, fmt.Sprintf("%s\n", fileErr))
+		os.Exit(1)
 	}
 
 	if checkIfMigrated(migrationName, db) {
@@ -118,7 +122,7 @@ func runNamedMigration(migrationName string, db *sql.DB) {
 
 	execQuery(db, string(sqlQuery))
 	execQuery(db, "INSERT INTO _migrations (migration) VALUES($1)", migrationName)
-	fmt.Printf(NoticeColor, fmt.Sprintf("%s MIGRATED\n", migrationName))
+	fmt.Printf(SuccessColor, fmt.Sprintf("%s MIGRATED\n", migrationName))
 }
 
 
@@ -126,7 +130,8 @@ func runNamedMigration(migrationName string, db *sql.DB) {
 func execQuery(db *sql.DB, sqlQuery string, args ...interface{}) {
 	_, dbErr := db.Exec(sqlQuery, args...)
 	if dbErr != nil {
-		log.Fatal(dbErr)
+		fmt.Printf(ErrorColor, fmt.Sprintf("%s\n", dbErr))
+		os.Exit(1)
 	}
 }
 
@@ -142,7 +147,8 @@ func createMigrationsTable(db *sql.DB) {
 
 	_, err := db.Exec(query)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf(ErrorColor, fmt.Sprintf("%s\n", err))
+		os.Exit(1)
 	}
 }
 
