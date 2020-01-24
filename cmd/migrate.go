@@ -65,9 +65,11 @@ func initConfig(*cobra.Command, []string) {
 
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err == nil {
-		LogInfo("using config file: %s\n", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil {
+		LogErr("Err reading config file: %s\n", err)
 	}
+
+	LogInfo("using config file: %s\n", viper.ConfigFileUsed())
 }
 
 // runAllMigrations loops through all migrations in the current folder and runs all the migrations that have not been run before
